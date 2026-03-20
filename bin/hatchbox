@@ -1,0 +1,316 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ----------------------------
+# Config
+# ----------------------------
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hatchbox"
+CONFIG_FILE="$CONFIG_DIR/apps"
+
+ensure_config() {
+  mkdir -p "$CONFIG_DIR"
+  touch "$CONFIG_FILE"
+}
+
+# ----------------------------
+# App management helpers
+# ----------------------------
+get_app() {
+  local name="$1"
+  grep "^${name}=" "$CONFIG_FILE" 2>/dev/null | head -1 | cut -d= -f2-
+}
+
+list_apps() {
+  if [[ ! -s "$CONFIG_FILE" ]]; then
+    echo "No apps configured yet. Add one with:"
+    echo "  hatchbox apps:add <name> <host>"
+    return 0
+  fi
+  echo "Apps:"
+  echo ""
+  while IFS='=' read -r name host; do
+    [[ -z "$name" ]] && continue
+    printf "  %-20s %s\n" "$name" "$host"
+  done < "$CONFIG_FILE"
+}
+
+add_app() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: hatchbox apps:add <name> <host>"
+    echo ""
+    echo "Examples:"
+    echo "  hatchbox apps:add myapp 123.45.67.8"
+    echo "  hatchbox apps:add myapp my-ssh-alias"
+    echo "  hatchbox apps:add myapp deploy@123.45.67.8"
+    return 1
+  fi
+
+  local name="$1"
+  local host="$2"
+
+  ensure_config
+
+  if grep -q "^${name}=" "$CONFIG_FILE" 2>/dev/null; then
+    echo "App '$name' already exists. Remove it first or use apps:edit."
+    return 1
+  fi
+
+  echo "${name}=${host}" >> "$CONFIG_FILE"
+  echo "Added $name → $host"
+}
+
+remove_app() {
+  if [[ $# -lt 1 ]]; then
+    echo "Usage: hatchbox apps:remove <name>"
+    return 1
+  fi
+
+  local name="$1"
+
+  if ! grep -q "^${name}=" "$CONFIG_FILE" 2>/dev/null; then
+    echo "App '$name' not found."
+    return 1
+  fi
+
+  local tmp="${CONFIG_FILE}.tmp"
+  grep -v "^${name}=" "$CONFIG_FILE" > "$tmp"
+  mv "$tmp" "$CONFIG_FILE"
+  echo "Removed $name"
+}
+
+edit_app() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: hatchbox apps:edit <name> <new-host>"
+    return 1
+  fi
+
+  local name="$1"
+  local host="$2"
+
+  if ! grep -q "^${name}=" "$CONFIG_FILE" 2>/dev/null; then
+    echo "App '$name' not found."
+    return 1
+  fi
+
+  local tmp="${CONFIG_FILE}.tmp"
+  sed "s|^${name}=.*|${name}=${host}|" "$CONFIG_FILE" > "$tmp"
+  mv "$tmp" "$CONFIG_FILE"
+  echo "Updated $name → $host"
+}
+
+# ----------------------------
+# SSH target resolution
+# ----------------------------
+resolve_ssh_target() {
+  local host="$1"
+
+  # Already has user@
+  if [[ "$host" == *@* ]]; then
+    echo "$host"
+    return
+  fi
+
+  # Looks like an IP or hostname (has a dot) — prepend deploy@
+  if [[ "$host" == *.* ]]; then
+    echo "deploy@$host"
+    return
+  fi
+
+  # SSH alias — let SSH config handle it
+  echo "$host"
+}
+
+# ----------------------------
+# Usage
+# ----------------------------
+usage() {
+  cat <<'EOF'
+Usage: hatchbox <command>
+
+App management:
+  apps              List all configured apps
+  apps:add          Add an app          hatchbox apps:add <name> <host>
+  apps:remove       Remove an app       hatchbox apps:remove <name>
+  apps:edit         Update app host     hatchbox apps:edit <name> <new-host>
+
+Run commands on an app:
+  run console       Rails console       hatchbox run console -a <app>
+  run shell         Shell in current/   hatchbox run shell -a <app>
+  logs              Tail logs           hatchbox logs <process> -a <app>
+  ssh               Plain SSH session   hatchbox ssh -a <app>
+
+Options:
+  -a, --app <name>  Specify the app
+  --help            Show this help
+
+Examples:
+  hatchbox apps:add myapp 123.45.67.8
+  hatchbox run console -a myapp
+  hatchbox logs server -a myapp
+  hatchbox ssh -a myapp
+EOF
+}
+
+# ----------------------------
+# Parse -a/--app flag from args
+# ----------------------------
+extract_app_flag() {
+  APP_NAME=""
+  REMAINING_ARGS=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -a|--app)
+        if [[ $# -lt 2 ]]; then
+          echo "Error: -a/--app requires an app name"
+          return 1
+        fi
+        APP_NAME="$2"
+        shift 2
+        ;;
+      *)
+        REMAINING_ARGS+=("$1")
+        shift
+        ;;
+    esac
+  done
+}
+
+# ----------------------------
+# Require app flag and resolve
+# ----------------------------
+require_app() {
+  if [[ -z "$APP_NAME" ]]; then
+    echo "Error: no app specified. Use -a <app>"
+    return 1
+  fi
+
+  ensure_config
+
+  local host
+  host="$(get_app "$APP_NAME")"
+
+  if [[ -z "$host" ]]; then
+    echo "Error: unknown app '$APP_NAME'"
+    echo ""
+    echo "Run 'hatchbox apps' to see configured apps."
+    return 1
+  fi
+
+  SSH_TARGET="$(resolve_ssh_target "$host")"
+}
+
+# ----------------------------
+# Main
+# ----------------------------
+if [[ $# -eq 0 || "$1" == "--help" || "$1" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+command="$1"
+shift
+
+case "$command" in
+  apps)
+    if [[ $# -eq 0 ]]; then
+      ensure_config
+      list_apps
+      exit 0
+    fi
+    # Shouldn't get here, but just in case
+    echo "Unknown subcommand. Did you mean apps:add, apps:remove, or apps:edit?"
+    exit 1
+    ;;
+
+  apps:add)
+    ensure_config
+    add_app "$@"
+    ;;
+
+  apps:remove)
+    ensure_config
+    remove_app "$@"
+    ;;
+
+  apps:edit)
+    ensure_config
+    edit_app "$@"
+    ;;
+
+  run)
+    if [[ $# -eq 0 ]]; then
+      echo "Usage: hatchbox run <console|shell> -a <app>"
+      exit 1
+    fi
+
+    subcmd="$1"
+    shift
+
+    extract_app_flag "$@"
+    require_app
+
+    case "$subcmd" in
+      console)
+        echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+        echo "Starting Rails console in $APP_NAME/current..."
+        echo ""
+        ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && bundle exec rails c"
+        ;;
+      shell)
+        echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+        echo "Opening shell in $APP_NAME/current..."
+        echo ""
+        ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && exec \$SHELL"
+        ;;
+      *)
+        echo "Unknown run command '$subcmd'"
+        echo "Available: console, shell"
+        exit 1
+        ;;
+    esac
+    ;;
+
+  logs)
+    if [[ $# -eq 0 ]]; then
+      echo "Usage: hatchbox logs <process> -a <app>"
+      echo "  e.g. hatchbox logs server -a myapp"
+      exit 1
+    fi
+
+    process="$1"
+    shift
+
+    extract_app_flag "$@"
+    require_app
+
+    local_unit="${APP_NAME}-${process}"
+    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+    echo "Checking unit $local_unit..."
+    echo ""
+
+    if ! ssh "$SSH_TARGET" "systemctl --user list-units --full --no-legend | grep -q '$local_unit'"; then
+      echo "Error: unit '$local_unit' not found on $SSH_TARGET"
+      exit 1
+    fi
+
+    echo "Tailing logs for $local_unit..."
+    echo ""
+    ssh -t "$SSH_TARGET" "journalctl --user --unit=$local_unit --follow"
+    ;;
+
+  ssh)
+    extract_app_flag "$@"
+    require_app
+
+    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+    echo ""
+    ssh "$SSH_TARGET"
+    ;;
+
+  *)
+    echo "Unknown command '$command'"
+    echo "Run 'hatchbox --help' for usage."
+    exit 1
+    ;;
+esac
