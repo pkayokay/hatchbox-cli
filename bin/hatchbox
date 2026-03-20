@@ -257,17 +257,16 @@ case "$command" in
     ;;
 
   logs|l)
-    if [[ $# -eq 0 ]]; then
+    extract_app_flag "$@"
+    require_app
+
+    if [[ ${#REMAINING_ARGS[@]} -eq 0 ]]; then
       echo "Usage: hatchbox logs <process> -a <app>"
       echo "  e.g. hatchbox logs server -a myapp"
       exit 1
     fi
 
-    process="$1"
-    shift
-
-    extract_app_flag "$@"
-    require_app
+    process="${REMAINING_ARGS[0]}"
 
     local_unit="${APP_NAME}-${process}"
     echo "🔍 Tailing $local_unit logs..."
