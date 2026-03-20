@@ -188,7 +188,7 @@ require_app() {
   ensure_config
 
   local host
-  host="$(get_app "$APP_NAME")"
+  host="$(get_app "$APP_NAME" || true)"
 
   if [[ -z "$host" ]]; then
     echo "Error: unknown app '$APP_NAME'"
