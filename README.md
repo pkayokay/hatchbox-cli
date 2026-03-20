@@ -69,6 +69,20 @@ hatchbox ssh -a myapp
 hatchbox current -a myapp
 ```
 
+## Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--app` | `-a` | Specify the app to run against |
+| `--help` | `-h` | Show help |
+
+## Shortcuts
+
+| Command | Shortcut |
+|---------|----------|
+| `console` | `c` |
+| `logs` | `l` |
+
 ## Config
 
 Apps are stored in `~/.config/hatchbox/apps` as simple `name=host` lines. You can edit this file directly if you prefer.
