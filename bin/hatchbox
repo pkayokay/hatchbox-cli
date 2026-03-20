@@ -134,9 +134,9 @@ App management:
   apps:update       Update app host     hatchbox apps:update <name> <new-host>
 
 Run commands on an app:
-  run console       Rails console       hatchbox run console -a <app>
-  run shell         Shell in current/   hatchbox run shell -a <app>
-  logs              Tail logs           hatchbox logs <process> -a <app>
+  console, c        Rails console       hatchbox console -a <app>
+  current           Shell in app dir    hatchbox current -a <app>
+  logs, l           Tail logs           hatchbox logs <process> -a <app>
   ssh               Plain SSH session   hatchbox ssh -a <app>
 
 Options:
@@ -145,8 +145,8 @@ Options:
 
 Examples:
   hatchbox apps:add myapp 123.45.67.8
-  hatchbox run console -a myapp
-  hatchbox logs server -a myapp
+  hatchbox console -a myapp          (or: hatchbox c -a myapp)
+  hatchbox logs server -a myapp      (or: hatchbox l server -a myapp)
   hatchbox ssh -a myapp
 EOF
 }
@@ -238,40 +238,27 @@ case "$command" in
     edit_app "$@"
     ;;
 
-  run)
-    if [[ $# -eq 0 ]]; then
-      echo "Usage: hatchbox run <console|shell> -a <app>"
-      exit 1
-    fi
-
-    subcmd="$1"
-    shift
-
+  console|c)
     extract_app_flag "$@"
     require_app
 
-    case "$subcmd" in
-      console)
-        echo "Connecting to $SSH_TARGET ($APP_NAME)..."
-        echo "Starting Rails console in $APP_NAME/current..."
-        echo ""
-        ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && bundle exec rails c"
-        ;;
-      shell)
-        echo "Connecting to $SSH_TARGET ($APP_NAME)..."
-        echo "Opening shell in $APP_NAME/current..."
-        echo ""
-        ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && exec \$SHELL"
-        ;;
-      *)
-        echo "Unknown run command '$subcmd'"
-        echo "Available: console, shell"
-        exit 1
-        ;;
-    esac
+    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+    echo "Starting Rails console in $APP_NAME/current..."
+    echo ""
+    ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && bundle exec rails c"
     ;;
 
-  logs)
+  current)
+    extract_app_flag "$@"
+    require_app
+
+    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+    echo "Opening $APP_NAME/current..."
+    echo ""
+    ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && exec \$SHELL"
+    ;;
+
+  logs|l)
     if [[ $# -eq 0 ]]; then
       echo "Usage: hatchbox logs <process> -a <app>"
       echo "  e.g. hatchbox logs server -a myapp"

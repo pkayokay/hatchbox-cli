@@ -42,14 +42,17 @@ hatchbox apps:remove myapp
 ### Rails console
 
 ```
-hatchbox run console -a myapp
+hatchbox console -a myapp
+hatchbox c -a myapp
 ```
 
 ### Tail logs
 
 ```
 hatchbox logs server -a myapp
+hatchbox l server -a myapp
 hatchbox logs solid_queue -a myapp
+hatchbox l solid_queue -a myapp
 ```
 
 The process name maps to a systemd unit: `<app>-<process>`.
@@ -63,7 +66,7 @@ hatchbox ssh -a myapp
 ### Shell in current release
 
 ```
-hatchbox run shell -a myapp
+hatchbox current -a myapp
 ```
 
 ## Config
