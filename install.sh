@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="${HOME}/.local/bin"
 REPO="https://raw.githubusercontent.com/pkayokay/hatchbox-cli/main/bin/hatchbox"
 
 echo "Installing hatchbox to $INSTALL_DIR..."
 
-if [[ ! -d "$INSTALL_DIR" ]]; then
-  echo "Creating $INSTALL_DIR..."
-  sudo mkdir -p "$INSTALL_DIR"
-fi
+mkdir -p "$INSTALL_DIR"
 
-sudo curl -fsSL "$REPO" -o "$INSTALL_DIR/hatchbox"
-sudo chmod +x "$INSTALL_DIR/hatchbox"
+curl -fsSL "$REPO" -o "$INSTALL_DIR/hatchbox"
+chmod +x "$INSTALL_DIR/hatchbox"
+
+if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
+  echo ""
+  echo "⚠️  $INSTALL_DIR is not in your PATH."
+  echo "Add it by running:"
+  echo ""
+  echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc"
+  echo ""
+fi
 
 echo "Done! Run 'hatchbox --help' to get started."

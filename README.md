@@ -11,7 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/pkayokay/hatchbox-cli/main/install.
 ## Uninstall
 
 ```
-sudo rm /usr/local/bin/hatchbox
+rm ~/.local/bin/hatchbox
 ```
 
 ## Usage
