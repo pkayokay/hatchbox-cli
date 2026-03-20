@@ -26,7 +26,7 @@ list_apps() {
     echo "  hatchbox apps:add <name> <host>"
     return 0
   fi
-  echo "Apps:"
+  echo "🚀 Apps:"
   echo ""
   while IFS='=' read -r name host; do
     [[ -z "$name" ]] && continue
