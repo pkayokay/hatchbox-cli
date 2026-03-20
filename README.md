@@ -32,10 +32,10 @@ The host can be an IP address, a hostname, or an SSH config alias. For IPs and h
 hatchbox apps
 ```
 
-### Edit or remove an app
+### Update or remove an app
 
 ```
-hatchbox apps:edit myapp 99.88.77.66
+hatchbox apps:update myapp 99.88.77.66
 hatchbox apps:remove myapp
 ```
 

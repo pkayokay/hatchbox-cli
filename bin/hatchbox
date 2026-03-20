@@ -51,7 +51,7 @@ add_app() {
   ensure_config
 
   if grep -q "^${name}=" "$CONFIG_FILE" 2>/dev/null; then
-    echo "App '$name' already exists. Remove it first or use apps:edit."
+    echo "App '$name' already exists. Remove it first or use apps:update."
     return 1
   fi
 
@@ -80,7 +80,7 @@ remove_app() {
 
 edit_app() {
   if [[ $# -lt 2 ]]; then
-    echo "Usage: hatchbox apps:edit <name> <new-host>"
+    echo "Usage: hatchbox apps:update <name> <new-host>"
     return 1
   fi
 
@@ -131,7 +131,7 @@ App management:
   apps              List all configured apps
   apps:add          Add an app          hatchbox apps:add <name> <host>
   apps:remove       Remove an app       hatchbox apps:remove <name>
-  apps:edit         Update app host     hatchbox apps:edit <name> <new-host>
+  apps:update       Update app host     hatchbox apps:update <name> <new-host>
 
 Run commands on an app:
   run console       Rails console       hatchbox run console -a <app>
@@ -219,7 +219,7 @@ case "$command" in
       exit 0
     fi
     # Shouldn't get here, but just in case
-    echo "Unknown subcommand. Did you mean apps:add, apps:remove, or apps:edit?"
+    echo "Unknown subcommand. Did you mean apps:add, apps:remove, or apps:update?"
     exit 1
     ;;
 
@@ -233,7 +233,7 @@ case "$command" in
     remove_app "$@"
     ;;
 
-  apps:edit)
+  apps:update)
     ensure_config
     edit_app "$@"
     ;;
