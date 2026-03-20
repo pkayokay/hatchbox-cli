@@ -242,8 +242,7 @@ case "$command" in
     extract_app_flag "$@"
     require_app
 
-    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
-    echo "Starting Rails console in $APP_NAME/current..."
+    echo "🚂 Opening Rails console for $APP_NAME..."
     echo ""
     ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && bundle exec rails c"
     ;;
@@ -252,8 +251,7 @@ case "$command" in
     extract_app_flag "$@"
     require_app
 
-    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
-    echo "Opening $APP_NAME/current..."
+    echo "📂 Opening shell in $APP_NAME/current..."
     echo ""
     ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && exec \$SHELL"
     ;;
@@ -272,8 +270,7 @@ case "$command" in
     require_app
 
     local_unit="${APP_NAME}-${process}"
-    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
-    echo "Checking unit $local_unit..."
+    echo "🔍 Tailing $local_unit logs..."
     echo ""
 
     if ! ssh "$SSH_TARGET" "systemctl --user list-units --full --no-legend | grep -q '$local_unit'"; then
@@ -281,8 +278,6 @@ case "$command" in
       exit 1
     fi
 
-    echo "Tailing logs for $local_unit..."
-    echo ""
     ssh -t "$SSH_TARGET" "journalctl --user --unit=$local_unit --follow"
     ;;
 
@@ -290,7 +285,7 @@ case "$command" in
     extract_app_flag "$@"
     require_app
 
-    echo "Connecting to $SSH_TARGET ($APP_NAME)..."
+    echo "🔐 Connecting to $APP_NAME..."
     echo ""
     ssh "$SSH_TARGET"
     ;;
