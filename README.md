@@ -45,12 +45,6 @@ hatchbox apps:remove myapp
 hatchbox run console -a myapp
 ```
 
-### Shell in current release
-
-```
-hatchbox run shell -a myapp
-```
-
 ### Tail logs
 
 ```
@@ -64,6 +58,12 @@ The process name maps to a systemd unit: `<app>-<process>`.
 
 ```
 hatchbox ssh -a myapp
+```
+
+### Shell in current release
+
+```
+hatchbox run shell -a myapp
 ```
 
 ## Config
