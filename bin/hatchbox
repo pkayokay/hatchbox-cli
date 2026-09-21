@@ -137,6 +137,7 @@ Run commands on an app:
   console, c        Rails console       hatchbox console -a <app>
   current           Shell in app dir    hatchbox current -a <app>
   logs, l           Tail logs           hatchbox logs <process> -a <app>
+  run               Run a command       hatchbox run -a <app> -- <cmd>...
   ssh               Plain SSH session   hatchbox ssh -a <app>
 
 Options:
@@ -147,6 +148,7 @@ Examples:
   hatchbox apps:add myapp 123.45.67.8
   hatchbox console -a myapp          (or: hatchbox c -a myapp)
   hatchbox logs server -a myapp      (or: hatchbox l server -a myapp)
+  hatchbox run -a myapp -- iex -S mix
   hatchbox ssh -a myapp
 EOF
 }
@@ -254,6 +256,31 @@ case "$command" in
     echo "📂 Opening shell in $APP_NAME/current..."
     echo ""
     ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && exec \$SHELL"
+    ;;
+
+  run)
+    extract_app_flag "$@"
+    require_app
+
+    if [[ ${#REMAINING_ARGS[@]} -gt 0 && "${REMAINING_ARGS[0]}" == "--" ]]; then
+      REMAINING_ARGS=("${REMAINING_ARGS[@]:1}")
+    fi
+
+    if [[ ${#REMAINING_ARGS[@]} -eq 0 ]]; then
+      echo "Usage: hatchbox run -a <app> -- <command>..."
+      echo "  e.g. hatchbox run -a myapp -- iex -S mix"
+      exit 1
+    fi
+
+    remote_cmd=""
+    for arg in "${REMAINING_ARGS[@]}"; do
+      remote_cmd+=" $(printf '%q' "$arg")"
+    done
+    remote_cmd="${remote_cmd# }"
+
+    echo "▶️  Running in $APP_NAME/current: $remote_cmd"
+    echo ""
+    ssh -t "$SSH_TARGET" "cd \$HOME/$APP_NAME/current && $remote_cmd"
     ;;
 
   logs|l)

@@ -57,6 +57,15 @@ hatchbox l solid_queue -a myapp
 
 The process name maps to a systemd unit: `<app>-<process>`.
 
+### Run a command
+
+```
+hatchbox run -a myapp -- iex -S mix
+hatchbox run -a myapp -- bin/rails console
+```
+
+Runs the command in `~/app/current` over SSH with a TTY. Use `--` so flags after it belong to the remote command.
+
 ### Plain SSH
 
 ```
