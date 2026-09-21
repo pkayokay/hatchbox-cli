@@ -10,6 +10,7 @@ mkdir -p "$INSTALL_DIR"
 
 curl -fsSL "$REPO" -o "$INSTALL_DIR/hatchbox"
 chmod +x "$INSTALL_DIR/hatchbox"
+ln -sfn "$INSTALL_DIR/hatchbox" "$INSTALL_DIR/hb"
 
 if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
   echo ""
@@ -20,4 +21,4 @@ if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
   echo ""
 fi
 
-echo "Done! Run 'hatchbox --help' to get started."
+echo "Done! Run 'hatchbox --help' or 'hb --help' to get started."

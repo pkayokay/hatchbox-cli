@@ -8,10 +8,12 @@ A CLI for managing and connecting to [Hatchbox](https://www.hatchbox.io/)-deploy
 curl -fsSL https://raw.githubusercontent.com/pkayokay/hatchbox-cli/main/install.sh | bash
 ```
 
+This installs `hatchbox` and a short alias `hb`.
+
 ## Uninstall
 
 ```
-rm ~/.local/bin/hatchbox
+rm ~/.local/bin/hatchbox ~/.local/bin/hb
 ```
 
 ## Usage
